@@ -74,13 +74,13 @@
     "desktop.guide": "Kılavuz",
     "desktop.settings": "Ayarlar",
     "desktop.world": "Türk Dünyası",
-    "desktop.start": "Başlat",
+    "desktop.start": "Önizlemeyi başlat",
     "desktop.stop": "Durdur",
     "desktop.advanced": "Gelişmiş görünüm",
     "desktop.simple": "Basit görünüm",
-    "desktop.game": "Oyun penceresi",
+    "desktop.game": "Yakalama kaynağı",
     "desktop.refresh": "Pencereleri yenile",
-    "desktop.generator": "Kare Oluşturucu · EKA-KÜ",
+    "desktop.generator": "Kare oluşturma",
     "desktop.mode": "Kare işleme modu",
     "desktop.multiplier": "Çarpan",
     "desktop.quality": "Kalite",
@@ -89,7 +89,7 @@
     "desktop.power_note": "Önayarlar işlem ve yakalama sınırlarını değiştirir; watt tasarrufu ölçülmedi.",
     "desktop.capture": "Yakalama",
     "desktop.renderer": "İşleyici",
-    "desktop.scaling": "Ölçekleme",
+    "desktop.scaling": "Önizleme ölçekleme",
     "desktop.blend": "Kare Harmanlama · EKA-KH",
     "desktop.weight": "Harmanlama oranı",
     "desktop.backend": "İşlem yöntemi",
@@ -184,6 +184,10 @@
     "errors.stream_protocol": "Geçersiz yerel motor akışı.",
     "desktop.error.python_required": "Önce Python 3 (Tk dahil) kur ve Install-desktop.cmd çalıştır. Bu EXE Python içermeyen bir başlatıcıdır.",
     "desktop.official": "Resmî proje adı",
-    "desktop.artifact_protection": "Bozulma koruması (statik HUD)"
+    "desktop.artifact_protection": "Bozulma koruması (statik HUD)",
+    "desktop.edition": "Masaüstü önizleme · v0.1.1",
+    "desktop.quick_help": "1. Pencere seç   2. Mod seç   3. Başlat  ·  Ctrl+Alt+S: başlat/durdur",
+    "desktop.scaling_hint": "Ayrı önizlemeyi boyutlandırır. F11: tam ekran · Esc: tam ekrandan çık. İşleme çözünürlüğü: 256 × 144.",
+    "desktop.live_rates": "Yakalama: {capture:.1f} FPS   ·   Önizleme gönderimi: {preview:.1f}/sn"
   }
 }

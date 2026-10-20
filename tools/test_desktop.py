@@ -47,6 +47,9 @@ with tempfile.TemporaryDirectory(prefix='eka-desktop-') as tmp:
     for page in ['performance','guide','world','settings','home']:app.navigate(page);root.update()
     app.profiles.data['theme']='light';app.rebuild();root.update();app.profiles.data['theme']='dark';app.rebuild();root.update()
     app.toggle();assert app.session is not None
+    root.update();app.toggle_fullscreen();root.update();assert app.fullscreen
+    app.leave_fullscreen();root.update();assert not app.fullscreen
+    app.preview.geometry('960x600');root.update()
     begin=time.monotonic();deadline=begin+6;index=0
     while time.monotonic()<deadline:
         index+=1;canvas.coords(rectangle,20+index%100,30,70+index%100,80);source.lift();root.update();time.sleep(.01)
@@ -54,6 +57,7 @@ with tempfile.TemporaryDirectory(prefix='eka-desktop-') as tmp:
     root.update();data=app.metrics.snapshot();assert not errors,errors
     assert len(app.metrics.capture_times)>=3 and data['preview_submitted']>=3 and data['repeated_submitted']>=1,data
     assert data['generated_completed']==0 and data['real_game_fps'] is None and data['power_watts'] is None
+    assert app.preview_image.width()>512 and app.preview_image.height()>288
     app.sample();root.update();data=app.metrics.snapshot()
     assert data['cpu_core_percent'] is not None and data['process_tree_rss_sum_bytes']>0,data
     destination=root_dir/'results/desktop';destination.mkdir(parents=True,exist_ok=True)

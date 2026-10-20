@@ -103,3 +103,12 @@ gelişmiş occlusion/HUD ayrımı, GPU/VRAM/güç sensörleri, özel APU/multi-G
 fiziksel AMD/NVIDIA/Intel/Apple Silicon testleri. AFMF 2.1 eşdeğerliği veya
 100→200 fiziksel görüntüleme doğrulanmadı. Tamamlanmamış seçenekler etkin
 bir özellik gibi sunulmaz.
+
+## v0.1.1 kullanım akışı
+
+Pencereyi açın, Ana Sayfa > Yakalama kaynağı listesinden seçin; listede yoksa
+Pencereleri yenile düğmesine basın. Kare oluşturma modunu ve çarpanı seçip
+Önizlemeyi başlat düğmesine basın. Uygulama odaktayken Ctrl+Alt+S aynı işlemi
+yapar. Ayrı önizlemeyi büyütebilir veya F11 ile tam ekrana geçebilirsiniz;
+Esc tam ekrandan çıkar. Önizlemeyi kapatmak yakalamayı durdurur. Kaynak pencere
+pikselleri görünür olmalıdır; bu sürüm oyun motoruna bağlanmaz.

@@ -24,7 +24,7 @@ with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as out:
         'UniFrame.exe --settings-menu\r\n'
         'UniFrame.exe --mode adaptive --backend auto --output results\r\n'
         'EVRKare / UniFrame / XFrame ayni yazilimdir.\r\n'
-        'Cevrimdisi arastirma prototipi; oyun yakalama ve ekrana sunum yok.\r\n'
+        'Pencere yakalama ve ayri onizleme prototipi; oyunun sunumuna kare eklemez.\r\n'
         'Windows ve fiziksel GPU calistirma testi henuz yapilmadi.\r\n')
     out.writestr('UniFrame/DESKTOP.txt','EVRKare.exe is a Python-dependent GUI launcher, not a standalone application. Install Python 3.10+ with Tk and run Install-desktop.cmd first. Windows runtime capture is untested. See docs/desktop.md.\n')
 artifacts += [windows,archive]

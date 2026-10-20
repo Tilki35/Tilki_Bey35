@@ -74,13 +74,13 @@
     "desktop.guide": "Guide",
     "desktop.settings": "Settings",
     "desktop.world": "Turkic languages",
-    "desktop.start": "Start",
+    "desktop.start": "Start preview",
     "desktop.stop": "Stop",
     "desktop.advanced": "Advanced view",
     "desktop.simple": "Simple view",
-    "desktop.game": "Game window",
+    "desktop.game": "Capture source",
     "desktop.refresh": "Refresh windows",
-    "desktop.generator": "Frame generator",
+    "desktop.generator": "Frame generation",
     "desktop.mode": "Processing mode",
     "desktop.multiplier": "Multiplier",
     "desktop.quality": "Quality",
@@ -89,7 +89,7 @@
     "desktop.power_note": "Presets change processing limits; watt savings are unmeasured.",
     "desktop.capture": "Capture",
     "desktop.renderer": "Processor",
-    "desktop.scaling": "Scaling",
+    "desktop.scaling": "Preview scaling",
     "desktop.blend": "Frame blending",
     "desktop.weight": "Blend weight",
     "desktop.backend": "Backend",
@@ -184,6 +184,10 @@
     "errors.stream_protocol": "Invalid local engine stream.",
     "desktop.error.python_required": "Install Python 3 with Tk, then run Install-desktop.cmd. This EXE is a launcher without a bundled Python runtime.",
     "desktop.official": "Official project name",
-    "desktop.artifact_protection": "Artifact protection (static HUD)"
+    "desktop.artifact_protection": "Artifact protection (static HUD)",
+    "desktop.edition": "Desktop preview · v0.1.1",
+    "desktop.quick_help": "1. Select a window   2. Choose a mode   3. Start  ·  Ctrl+Alt+S: start/stop",
+    "desktop.scaling_hint": "Resizes the separate preview. F11: fullscreen preview · Esc: exit fullscreen. Processing resolution: 256 × 144.",
+    "desktop.live_rates": "Capture: {capture:.1f} FPS   ·   Preview submissions: {preview:.1f}/s"
   }
 }

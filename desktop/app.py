@@ -48,8 +48,9 @@ class App:
                 if isinstance(messages,dict):self.catalogs[path.stem.casefold()]=messages
             except (ValueError,KeyError,OSError):continue
         self.info=self.native_settings();self.language=self.info['ui_language_effective'];self.name=self.info['program_name'];self.fields=[]
-        self.root.title(self.name);self.root.geometry('1160x840');self.root.minsize(780,620);self.root.protocol('WM_DELETE_WINDOW',self.close)
-        self.status=tk.StringVar(value=self.t('idle'));self.measure_vars={};self.rebuild();self.root.after(20,self.poll);self.root.after(1000,self.sample)
+        self.root.title(self.name);self.root.geometry('1200x800');self.root.minsize(900,640);self.root.protocol('WM_DELETE_WINDOW',self.close)
+        self.root.bind('<Control-Alt-s>',lambda _:self.toggle());self.root.bind('<Escape>',lambda _:self.stop() if self.session else None)
+        self.status=tk.StringVar(value=self.t('idle'));self.live_summary=tk.StringVar(value=self.t('quick_help'));self.measure_vars={};self.rebuild();self.root.after(20,self.poll);self.root.after(1000,self.sample)
     def t(self,key):
         if not key.startswith('desktop.'):key='desktop.'+key
         return self.catalogs.get(self.language.casefold(),{}).get(key,self.catalogs['en'].get(key,key))
@@ -66,8 +67,8 @@ class App:
         for child in self.root.winfo_children():
             if not isinstance(child,tk.Toplevel):child.destroy()
         light=self.profiles.data['theme']=='light'
-        self.colors={'background':'#edf2f6' if light else '#101820','card':'#ffffff' if light else '#1a2733',
-                     'sidebar':'#dfe8ed' if light else '#0c121a','text':'#172b39' if light else '#e7f0f6',
+        self.colors={'background':'#edf2f6' if light else '#17191d','card':'#ffffff' if light else '#23262c',
+                     'sidebar':'#dfe8ed' if light else '#111317','text':'#172b39' if light else '#e7f0f6',
                      'muted':'#526777' if light else '#96aebf','accent':self.profiles.data['accent']}
         c=self.colors;self.root.configure(bg=c['background']);style=ttk.Style(self.root);style.theme_use('clam')
         self.rtl=self.info.get('ui_text_direction')=='rtl'
@@ -80,7 +81,7 @@ class App:
         style.configure('CardTitle.TLabel',font=(self.font_family,12,'bold'));style.configure('Muted.TLabel',foreground=c['muted'])
         self.sidebar=tk.Frame(self.root,bg=c['sidebar'],width=230);self.sidebar.pack(side='right' if self.rtl else 'left',fill='y');self.sidebar.pack_propagate(False)
         tk.Label(self.sidebar,text=self.name,bg=c['sidebar'],fg=c['accent'],font=(self.font_family,20,'bold'),wraplength=210).pack(anchor='w',padx=18,pady=(24,5))
-        tk.Label(self.sidebar,text='Evrensel Kare Artırma · EKA',bg=c['sidebar'],fg=c['muted'],font=(self.font_family,8)).pack(anchor='w',padx=18)
+        tk.Label(self.sidebar,text=self.t('edition'),bg=c['sidebar'],fg=c['muted'],font=(self.font_family,8)).pack(anchor='w',padx=18)
         for page in ['home','performance','guide','world','settings']:
             ttk.Button(self.sidebar,text=self.t(page),command=lambda p=page:self.navigate(p)).pack(fill='x',padx=12,pady=3)
         tk.Label(self.sidebar,text=self.t('profiles'),bg=c['sidebar'],fg=c['muted']).pack(anchor='w',padx=16,pady=(22,8))
@@ -97,6 +98,7 @@ class App:
         self.toolbar=tk.Frame(self.main,bg=c['background']);self.toolbar.pack(fill='x')
         tk.Label(self.toolbar,text=self.profiles.current['name'] if self.profiles.current['name']!='Default' else self.t('default'),bg=c['background'],fg=c['text'],font=(self.font_family,20,'bold')).pack(side='left')
         self.start_button=ttk.Button(self.toolbar,text=self.t('stop' if self.session else 'start'),style='Start.TButton',command=self.toggle);self.start_button.pack(side='left' if self.rtl else 'right')
+        tk.Label(self.main,textvariable=self.live_summary,bg=c['background'],fg=c['accent'],anchor='w',wraplength=850).pack(fill='x',pady=(10,0))
         self.advanced=tk.BooleanVar(value=self.profiles.data['advanced'])
         ttk.Checkbutton(self.main,text=self.t('advanced'),variable=self.advanced,command=self.change_view).pack(anchor='w',pady=12)
         tk.Label(self.main,text=self.t('preview_notice'),bg=c['background'],fg=c['muted'],anchor='w',wraplength=850).pack(fill='x',pady=(0,12))
@@ -105,9 +107,14 @@ class App:
         self.body=tk.Frame(self.body_canvas,bg=c['background']);self.body_window=self.body_canvas.create_window(0,0,window=self.body,anchor='nw')
         self.body.bind('<Configure>',lambda _:self.body_canvas.configure(scrollregion=self.body_canvas.bbox('all')))
         self.body_canvas.bind('<Configure>',self.layout)
+        self.root.bind('<MouseWheel>',lambda e:self.scroll_body(-1 if e.delta>0 else 1))
+        self.root.bind('<Button-4>',lambda e:self.scroll_body(-1))
+        self.root.bind('<Button-5>',lambda e:self.scroll_body(1))
         tk.Label(self.main,textvariable=self.status,bg=c['background'],fg=c['muted'],anchor='w',wraplength=850).pack(fill='x',pady=(12,0))
         self.cards=[];self.fields=[];self.render_page()
         self.show_flag()
+    def scroll_body(self,direction):
+        if self.body_canvas.winfo_exists():self.body_canvas.yview_scroll(direction*3,'units')
     def show_flag(self):
         path=self.profiles.data.get('flag_path','');mode=self.profiles.data['flag_mode']
         naming=json.loads((ROOT/'locales/names.json').read_text(encoding='utf-8'));language=self.info.get('detected_language') or ''
@@ -152,6 +159,8 @@ class App:
         if self.profiles.current['mode']=='off':multiplier.configure(state='disabled')
         if self.profiles.current['mode'] in ['off','repeat','blend']:quality.configure(state='disabled')
         power=self.card('power');self.combo(power,'power',['auto','eco','balanced','performance','quality']);ttk.Label(power,text=self.t('power_note'),wraplength=300,style='Muted.TLabel').pack(anchor='w')
+        scaling=self.card('scaling');self.combo(scaling,'scaling',['off','spatial']);self.combo(scaling,'aspect',['fit','fill'])
+        ttk.Label(scaling,text=self.t('scaling_hint'),wraplength=300,style='Muted.TLabel').pack(anchor='w')
         if not self.advanced.get():return
         blend=self.card('blend');ttk.Label(blend,text=self.t('weight')).pack(anchor='w');var=tk.DoubleVar(value=self.profiles.current['blend_weight'])
         scale=ttk.Scale(blend,from_=0,to=1,variable=var,command=lambda value:self.slider('blend_weight',float(value)));scale.pack(fill='x',pady=12)
@@ -167,7 +176,6 @@ class App:
         if self.profiles.current['mode'] in ['off','repeat','blend'] or self.session:protect.configure(state='disabled')
         self.pacing=tk.BooleanVar(value=self.profiles.current.get('preview_pacing',True));ttk.Checkbutton(renderer,text=self.t('pacing'),variable=self.pacing,command=lambda:self.slider('preview_pacing',self.pacing.get())).pack(anchor='w')
         ttk.Label(renderer,text=self.t('unsupported'),wraplength=300,style='Muted.TLabel').pack(anchor='w',pady=8)
-        scaling=self.card('scaling');self.combo(scaling,'scaling',['off','spatial']);self.combo(scaling,'aspect',['fit','fill'])
     def slider(self,key,value):
         if not self.session:self.profiles.current[key]=value
         if hasattr(self,'save_after'):
@@ -262,10 +270,24 @@ class App:
             self.session=Session(self.binary,self.config,self.profiles.current,candidates[0].id);self.metrics=self.session.metrics
             self.preview=tk.Toplevel(self.root);self.preview.title(self.name+' · '+self.t('preview'));self.preview.protocol('WM_DELETE_WINDOW',self.stop)
             ttk.Label(self.preview,text=self.t('preview_notice'),wraplength=550).pack(padx=12,pady=10)
-            self.preview_label=ttk.Label(self.preview);self.preview_label.pack(padx=12,pady=12)
+            self.preview.geometry('800x500');self.preview.minsize(320,240);self.preview.configure(bg='#000000')
+            self.preview.bind('<F11>',self.toggle_fullscreen);self.preview.bind('<Escape>',self.leave_fullscreen)
+            self.preview_label=tk.Label(self.preview,bg='#000000',borderwidth=0);self.preview_label.pack(fill='both',expand=True,padx=0,pady=0)
+            self.fullscreen=False
             self.session.start();self.status.set(self.t('running'));self.rebuild()
         except (CaptureError,RuntimeError) as e:
             self.stop();self.error(e)
+    def toggle_fullscreen(self,_=None):
+        if self.preview:
+            self.fullscreen=not self.fullscreen;self.preview.attributes('-fullscreen',self.fullscreen)
+    def leave_fullscreen(self,_=None):
+        if self.preview:self.fullscreen=False;self.preview.attributes('-fullscreen',False)
+    def preview_frame(self,image):
+        width=max(1,self.preview_label.winfo_width());height=max(1,self.preview_label.winfo_height())
+        resample=Image.Resampling.BILINEAR if self.profiles.current['scaling']=='spatial' else Image.Resampling.NEAREST
+        ratio=min(width/image.width,height/image.height)
+        image=image.resize((max(1,int(image.width*ratio)),max(1,int(image.height*ratio))),resample)
+        self.preview_image=ImageTk.PhotoImage(image);self.preview_label.configure(image=self.preview_image)
     def stop(self):
         if self.session:self.session.stop();self.stopping=self.session;self.session=None;self.stopping.join(timeout=3)
         self.pending.clear()
@@ -273,7 +295,7 @@ class App:
             try:self.preview.destroy()
             except tk.TclError:pass
             self.preview=None
-        self.status.set(self.t('idle'));self.start_button.configure(text=self.t('start'))
+        self.live_summary.set(self.t('quick_help'));self.status.set(self.t('idle'));self.start_button.configure(text=self.t('start'))
         self.rebuild()
     def poll(self):
         if self.session:
@@ -295,12 +317,15 @@ class App:
                 if kind!='real' and now-due>.04:
                     with self.metrics.lock:self.metrics.dropped+=1
                 elif self.preview:
-                    image=image.resize((512,288),Image.Resampling.BILINEAR if self.profiles.current['scaling']=='spatial' else Image.Resampling.NEAREST)
-                    self.preview_image=ImageTk.PhotoImage(image);self.preview_label.configure(image=self.preview_image)
+                    self.preview_frame(image)
                     with self.metrics.lock:self.metrics.submit_times.append(now);self.metrics.submitted+=1;self.metrics.repeated+=kind=='repeat'
         self.root.after(8 if self.session else 250,self.poll)
     def sample(self):
         self.metrics.sample_processes(self.session.engine if self.session else None);data=self.metrics.snapshot()
+        if self.session:
+            capture=data.get('capture_fps') or 0;preview=data.get('preview_submission_fps') or 0
+            self.live_summary.set(self.t('live_rates').format(capture=capture,preview=preview))
+        else:self.live_summary.set(self.t('quick_help'))
         mapping={'capture_fps':'capture_fps','preview_fps':'preview_submission_fps','generated':'generated_completed','repeated':'repeated_submitted',
             'dropped':'dropped','processing_ms':'processing_ms','cpu':'cpu_core_percent','ram':'process_tree_rss_sum_bytes','device':'device'}
         for key,var in self.measure_vars.items():
