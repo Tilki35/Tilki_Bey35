@@ -26,11 +26,12 @@ with tempfile.TemporaryDirectory(prefix='eka-desktop-') as tmp:
     except ValueError:pass
     assert (directory/'bad.json').read_text()=='{invalid'
     # Preserve aspect ratio without stretching to the processing dimensions.
-    letterboxed=prepare(Image.new('RGB',(100,100),'red'))
+    letterboxed=prepare(Image.new('RGB',(100,100),'red'),size=(256,144))
+    native=Image.new('RGB',(641,359),'red');assert prepare(native) is native
     assert letterboxed.size==(256,144) and letterboxed.getpixel((0,0))==(0,0,0) and letterboxed.getpixel((128,72))==(255,0,0)
     subprocess.run([str(root_dir/'dist/uniframe'),'--config',str(directory/'settings.json'),
                     '--name','EVRKare','--ui-language','tr','--settings'],check=True,capture_output=True)
-    root=tk.Tk();source=tk.Toplevel(root);source.title('EKA live test target');source.geometry('256x144+0+0')
+    root=tk.Tk();source=tk.Toplevel(root);source.title('EKA live test target');source.geometry('641x359+0+0')
     canvas=tk.Canvas(source,bg='#1268ac',highlightthickness=0);canvas.pack(fill='both',expand=True)
     rectangle=canvas.create_rectangle(20,30,70,80,fill='#f4cc32',outline='')
     root.update();source.lift();root.update()
@@ -58,6 +59,13 @@ with tempfile.TemporaryDirectory(prefix='eka-desktop-') as tmp:
     assert len(app.metrics.capture_times)>=3 and data['preview_submitted']>=3 and data['repeated_submitted']>=1,data
     assert data['generated_completed']==0 and data['real_game_fps'] is None and data['power_watts'] is None
     assert app.preview_image.width()>512 and app.preview_image.height()>288
+    assert (data['width'],data['height'])==(641,359),data
+    source.geometry('800x450+0+0');deadline=time.monotonic()+8
+    while time.monotonic()<deadline:
+        source.lift();root.update();time.sleep(.02)
+        data=app.metrics.snapshot()
+        if (data['width'],data['height'])==(800,450):break
+    assert (data['width'],data['height'])==(800,450),data
     app.sample();root.update();data=app.metrics.snapshot()
     assert data['cpu_core_percent'] is not None and data['process_tree_rss_sum_bytes']>0,data
     destination=root_dir/'results/desktop';destination.mkdir(parents=True,exist_ok=True)

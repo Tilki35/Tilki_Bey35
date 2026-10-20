@@ -38,7 +38,7 @@ derlendi; Windows çalıştırması yapılmadı. macOS adaptörü kodda; macOS d
 ve çalıştırması yapılmadı. Unicode veri yolu/RTL metadata test edildi;
 tüm terminal/font/yazı sistemlerinin görsel görünümü doğrulanmadı.
 
-RX 7800 XT ve diğer fiziksel GPU'lar, 1080p/1440p/4K, gerçek oyun yakalama,
+RX 7800 XT ve diğer fiziksel GPU'lar, 1440p/4K çalıştırma, gerçek oyun yakalama,
 DX/OpenGL entegrasyonu, ekrana sunum ve fiziksel giriş gecikmesi doğrulanmadı.
 Gerçek/üretilen/görüntülenen FPS ve giriş gecikmesinin `null` kalması kasıtlıdır.
 Sıradaki donanım doğrulaması canlı sahipli Vulkan test swapchain'i, gerçek
@@ -63,3 +63,21 @@ benchmark'ı değildir. GPU utilization/VRAM/watt ve fiziksel FPS null kaldı.
 bağımsız Linux paketini açtı, gerçek pencereyi doğruladı ve WM_DELETE_WINDOW
 ile normal kapattı. Windows motoru/başlatıcısı çapraz derlendi; Windows capture
 ve GUI çalıştırılmadı. macOS capture hâlâ uygulanmadı.
+
+## v0.2 kaynak çözünürlüğü doğrulaması
+
+`tools/test_native_resolution.py`, 1920×1080'de piksel piksel aynı kaynak
+geçişini, tekrarın yeni kare olarak sayılmamasını, harmanlama piksel değerlerini
+ve hareket telafili gerçek ara kare çıktısını CPU ve yazılım Vulkan'da sınar.
+321×181 tek boyutlu kenarlar dahil CPU/Vulkan ara kare eşleşmesi kontrol edilir.
+Geçersiz boyutlar ve toplam payload sınırı reddedilir. Masaüstü testi gerçek
+641×359 X11 yakalamanın küçülmediğini, pencere 800×450'ye değiştiğinde motorun
+aynı boyuta geçtiğini ve normal duruşta iş parçacığının kapandığını sınar.
+
+`results/native-resolution/measurements.json` tek kontrollü çalıştırmanın
+native işlem ve pipe gidiş-dönüş sürelerini ayrı kaydeder. İşlem milisaniyesi
+küçük olsa bile transfer/sunum ve lookahead maliyetleri sıfır değildir. Ölçüm
+100→200 fiziksel FPS, AFMF eşdeğerliği veya düşük giriş gecikmesi kanıtı değildir.
+
+Harmanlanmış görüntüler `blended_count` / `blended_completed` olarak ayrı
+sayılır; `generated_count` hareket telafili yeni ara karelere ayrılmıştır.

@@ -1,0 +1,73 @@
+{
+  "environment": "Linux cloud, CPU and Mesa software Vulkan; no physical GPU",
+  "scope": "single synthetic Full HD pair; not gameplay or input-to-photon latency",
+  "processing_ms_excludes": "capture, transport, presentation and source-frame lookahead",
+  "measurements": [
+    {
+      "requested_backend": "cpu",
+      "actual_backend": "cpu",
+      "mode": "repeat",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 0.003245,
+      "pipe_roundtrip_ms": 44.715608999467804
+    },
+    {
+      "requested_backend": "cpu",
+      "actual_backend": "cpu",
+      "mode": "blend",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 54.167336,
+      "pipe_roundtrip_ms": 116.40302800060454
+    },
+    {
+      "requested_backend": "cpu",
+      "actual_backend": "cpu",
+      "mode": "interpolate",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 927.49607,
+      "pipe_roundtrip_ms": 1057.9734499997357
+    },
+    {
+      "requested_backend": "vulkan",
+      "actual_backend": "cpu",
+      "mode": "repeat",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 0.004106,
+      "pipe_roundtrip_ms": 18.41912700001558
+    },
+    {
+      "requested_backend": "vulkan",
+      "actual_backend": "vulkan",
+      "mode": "blend",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 205.254063,
+      "pipe_roundtrip_ms": 324.71027599967783
+    },
+    {
+      "requested_backend": "vulkan",
+      "actual_backend": "vulkan",
+      "mode": "interpolate",
+      "size": [
+        1920,
+        1080
+      ],
+      "processing_ms": 1175.37857,
+      "pipe_roundtrip_ms": 1285.3484300003402
+    }
+  ]
+}

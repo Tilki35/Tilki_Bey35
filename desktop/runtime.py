@@ -16,10 +16,12 @@ from .model import effective_processing
 def creation_flags():return {'creationflags':subprocess.CREATE_NO_WINDOW} if sys.platform=='win32' else {}
 
 class EnginePipe:
-    def __init__(self,binary,config,p):
+    def __init__(self,binary,config,p,size=(256,144)):
         settings=effective_processing(p)
+        self.size=tuple(size);width,height=self.size
+        if not (1<=width<=4096 and 1<=height<=4096 and width*height<=8294400 and width*height*settings['multiplier']<=16777216):raise RuntimeError('desktop.error.capture_size')
         command=[str(binary),'--config',str(config),'--stream','--mode',settings['mode'],'--backend',settings['backend'],
-            '--multiplier',str(settings['multiplier']),'--source-fps',str(settings['fps']),
+            '--width',str(width),'--height',str(height),'--multiplier',str(settings['multiplier']),'--source-fps',str(settings['fps']),
             '--estimator',settings['estimator'],'--artifact-reduction','on' if p['artifact_reduction'] else 'off',
             '--blend-weight',str(settings['weight']),'--search-radius',str(settings['radius'])]
         self.log=tempfile.TemporaryFile();self.closed=False
@@ -29,12 +31,13 @@ class EnginePipe:
         if len(result)!=count:raise RuntimeError('desktop.error.engine_stopped')
         return result
     def process_frame(self,image,identity,timestamp):
+        if image.size!=self.size or image.mode!='RGB':raise RuntimeError('desktop.error.protocol')
         self.process.stdin.write((json.dumps({'id':identity,'timestamp_ms':timestamp})+'\n').encode()+image.tobytes());self.process.stdin.flush()
         line=self.process.stdout.readline(16384)
         if not line or not line.endswith(b'\n'):raise RuntimeError('desktop.error.engine_stopped')
         data=json.loads(line)
-        if data.get('protocol')!=1 or data.get('width')!=256 or data.get('height')!=144 or not 1<=data.get('payload_frame_count',0)<=8:raise RuntimeError('desktop.error.protocol')
-        images=[Image.frombytes('RGB',(256,144),self.read(256*144*3)) for _ in range(data['payload_frame_count'])]
+        if data.get('protocol')!=1 or data.get('width')!=self.size[0] or data.get('height')!=self.size[1] or not 1<=data.get('payload_frame_count',0)<=8:raise RuntimeError('desktop.error.protocol')
+        images=[Image.frombytes('RGB',self.size,self.read(self.size[0]*self.size[1]*3)) for _ in range(data['payload_frame_count'])]
         return data,images
     def close(self):
         if self.closed:return
@@ -51,16 +54,17 @@ class EnginePipe:
 class Metrics:
     def __init__(self):
         self.capture_times=deque(maxlen=120);self.submit_times=deque(maxlen=240)
-        self.generated=0;self.repeated=0;self.submitted=0;self.dropped=0;self.capture_ms=None;self.processing_ms=None
-        self.backend=None;self.device=None;self.rss=None;self.cpu=None;self.processes={};self.warmed=False
+        self.generated=0;self.blended=0;self.repeated=0;self.submitted=0;self.dropped=0;self.capture_ms=None;self.processing_ms=None
+        self.pipeline_ms=None;self.lookahead_ms=None;self.width=None;self.height=None;self.backend=None;self.device=None;self.rss=None;self.cpu=None;self.processes={};self.warmed=False
         self.lock=threading.Lock()
     @staticmethod
     def rate(times):return (len(times)-1)/(times[-1]-times[0]) if len(times)>1 and times[-1]>times[0] else None
     def snapshot(self):
         with self.lock:return {'capture_fps':self.rate(self.capture_times),'preview_submission_fps':self.rate(self.submit_times),
             'real_game_fps':None,'displayed_fps':None,'input_latency_ms':None,'gpu_utilization_percent':None,'vram_bytes':None,'power_watts':None,
-            'generated_completed':self.generated,'repeated_submitted':self.repeated,'preview_submitted':self.submitted,'dropped':self.dropped,
+            'generated_completed':self.generated,'blended_completed':self.blended,'repeated_submitted':self.repeated,'preview_submitted':self.submitted,'dropped':self.dropped,
             'capture_ms':self.capture_ms,'processing_ms':self.processing_ms,'cpu_core_percent':self.cpu,'process_tree_rss_sum_bytes':self.rss,
+            'pipeline_ms':self.pipeline_ms,'lookahead_ms':self.lookahead_ms,'width':self.width,'height':self.height,
             'backend':self.backend,'device':self.device,'measurement_scope':'application_and_research_preview'}
     def sample_processes(self,engine=None):
         values=[];rss=0;sampled=0
@@ -84,16 +88,21 @@ class Session:
         capture=None
         try:
             capture=capture_class()(self.window)
-            self.engine=EnginePipe(self.binary,self.config,self.profile)
             interval=1/effective_processing(self.profile)['fps'];deadline=time.perf_counter();last_capture=None;identity=0
             while not self.stop_event.is_set():
                 if self.stop_event.wait(max(0,deadline-time.perf_counter())):break
                 start=time.perf_counter();raw=capture.grab();image=prepare(raw,self.profile['aspect']);captured=time.perf_counter()
+                if self.engine is None or self.engine.size!=image.size:
+                    if self.engine:self.engine.close()
+                    self.engine=EnginePipe(self.binary,self.config,self.profile,image.size)
+                if self.stop_event.is_set():break
                 data,images=self.engine.process_frame(image,identity,captured*1000)
                 period=captured-last_capture if last_capture is not None else interval;last_capture=captured
                 with self.metrics.lock:
                     self.metrics.capture_times.append(captured);self.metrics.capture_ms=(captured-start)*1000
-                    self.metrics.processing_ms=data['processing_ms'];self.metrics.generated+=data['generated_count']
+                    self.metrics.processing_ms=data['processing_ms'];self.metrics.generated+=data['generated_count'];self.metrics.blended+=data.get('blended_count',0)
+                    self.metrics.pipeline_ms=(time.perf_counter()-start)*1000;self.metrics.lookahead_ms=data['lookahead_ms']
+                    self.metrics.width,self.metrics.height=image.size
                     self.metrics.backend=data['backend'];self.metrics.device=data['device']
                 batch=(data,images,period)
                 try:self.output.put_nowait(batch)

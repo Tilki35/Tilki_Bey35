@@ -156,6 +156,12 @@ class App:
         else:self.refresh_windows(quiet=True)
         frame=self.card('generator');self.combo(frame,'mode',['adaptive','interpolate','repeat','blend','off']);multiplier=self.combo(frame,'multiplier',[1,2,3,4,6,8],[str(i)+'×' for i in [1,2,3,4,6,8]])
         quality=self.combo(frame,'quality',['eco','balanced','performance','quality'])
+        ttk.Label(frame,text=self.t('mode_help.'+self.profiles.current['mode']),wraplength=320,style='Muted.TLabel').pack(anchor='w')
+        if self.profiles.current['mode']=='blend':
+            ttk.Label(frame,text=self.t('weight')).pack(anchor='w',pady=(8,0))
+            weight=tk.DoubleVar(value=self.profiles.current['blend_weight'])
+            slider=ttk.Scale(frame,from_=0,to=1,variable=weight,command=lambda v:self.slider('blend_weight',float(v)));slider.pack(fill='x',pady=8)
+            if self.session:slider.configure(state='disabled')
         if self.profiles.current['mode']=='off':multiplier.configure(state='disabled')
         if self.profiles.current['mode'] in ['off','repeat','blend']:quality.configure(state='disabled')
         power=self.card('power');self.combo(power,'power',['auto','eco','balanced','performance','quality']);ttk.Label(power,text=self.t('power_note'),wraplength=300,style='Muted.TLabel').pack(anchor='w')
@@ -184,7 +190,7 @@ class App:
         self.save_after=self.root.after(250,self.profiles.save)
     def performance(self):
         card=self.card('performance')
-        for key in ['capture_fps','preview_fps','game_fps','displayed_fps','latency','generated','repeated','dropped','processing_ms','cpu','ram','gpu','device']:
+        for key in ['capture_fps','preview_fps','game_fps','displayed_fps','latency','generated','blended','repeated','dropped','processing_ms','pipeline_ms','lookahead_ms','resolution','cpu','ram','gpu','device']:
             row=ttk.Frame(card);row.pack(fill='x',pady=5);ttk.Label(row,text=self.t(key),wraplength=260).pack(side='left')
             variable=self.measure_vars.setdefault(key,tk.StringVar(value=self.t('unknown')));ttk.Label(row,textvariable=variable).pack(side='right')
         ttk.Button(card,text=self.t('export'),command=self.export).pack(anchor='w',pady=12)
@@ -326,10 +332,11 @@ class App:
             capture=data.get('capture_fps') or 0;preview=data.get('preview_submission_fps') or 0
             self.live_summary.set(self.t('live_rates').format(capture=capture,preview=preview))
         else:self.live_summary.set(self.t('quick_help'))
-        mapping={'capture_fps':'capture_fps','preview_fps':'preview_submission_fps','generated':'generated_completed','repeated':'repeated_submitted',
-            'dropped':'dropped','processing_ms':'processing_ms','cpu':'cpu_core_percent','ram':'process_tree_rss_sum_bytes','device':'device'}
+        mapping={'capture_fps':'capture_fps','preview_fps':'preview_submission_fps','generated':'generated_completed','blended':'blended_completed','repeated':'repeated_submitted',
+            'dropped':'dropped','processing_ms':'processing_ms','pipeline_ms':'pipeline_ms','lookahead_ms':'lookahead_ms','cpu':'cpu_core_percent','ram':'process_tree_rss_sum_bytes','device':'device'}
         for key,var in self.measure_vars.items():
             value=data.get(mapping.get(key,''))
+            if key=='resolution' and data.get('width'):value=f"{data['width']} × {data['height']}"
             if key=='ram' and value is not None:value/=1024**2
             var.set(f'{value:.1f}' if isinstance(value,(int,float)) else value or self.t('unknown'))
         self.root.after(1000,self.sample)

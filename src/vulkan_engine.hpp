@@ -134,6 +134,9 @@ struct Engine {
             }
         }
         if(!selected) throw std::runtime_error("errors.no_compute_queue");
+        VkPhysicalDeviceProperties selectedProperties{};vkGetPhysicalDeviceProperties(selected,&selectedProperties);
+        if(uint64_t(W)*H*sizeof(Pixel)>selectedProperties.limits.maxStorageBufferRange)
+            throw std::runtime_error("errors.stream_protocol");
         vkGetPhysicalDeviceMemoryProperties(selected,&memoryProperties);
         float priority=1;
         VkDeviceQueueCreateInfo qci{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};

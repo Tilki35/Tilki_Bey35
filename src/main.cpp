@@ -97,7 +97,7 @@ int runBackend(int argc,char** argv) {
         std::string backend="auto";
         Options options; bool pacing=true,demo=false; double simulatedCost=1;
         std::string sceneName="all",inputA,inputB;
-        bool stream=false;int multiplier=2,radius=12;float blendWeight=.5f;
+        bool stream=false;int streamWidth=256,streamHeight=144;int multiplier=2,radius=12;float blendWeight=.5f;
         if(argc==2 && std::string(argv[1])=="--help") {
             std::cout<<ui("app.help"); return 0;
         }
@@ -115,6 +115,11 @@ int runBackend(int argc,char** argv) {
             else if(arg=="--simulated-processing-ms" && i+1<argc) simulatedCost=number(argv[++i],0,10000);
             else if(arg=="--pacing-demo") demo=true;
             else if(arg=="--stream") stream=true;
+            else if((arg=="--width" || arg=="--height") && i+1<argc) {
+                double value=number(argv[++i],1,4096);
+                if(value!=std::floor(value))throw std::runtime_error("errors.stream_protocol");
+                if(arg=="--width")streamWidth=int(value);else streamHeight=int(value);
+            }
             else if(arg=="--multiplier" && i+1<argc) {double value=number(argv[++i],1,8);if(value!=std::floor(value))throw std::runtime_error("errors.stream_protocol");multiplier=int(value);}
             else if(arg=="--search-radius" && i+1<argc) {double value=number(argv[++i],1,24);if(value!=std::floor(value))throw std::runtime_error("errors.stream_protocol");radius=int(value);}
             else if(arg=="--blend-weight" && i+1<argc) blendWeight=float(number(argv[++i],0,1));
@@ -132,8 +137,13 @@ int runBackend(int argc,char** argv) {
         if(inputA.empty()!=inputB.empty()) throw std::runtime_error("errors.both_input_frames_are_required");
         if(stream) {
             if(demo || !inputA.empty() || options.mode=="motion" || options.mode=="optical-flow")throw std::runtime_error("errors.stream_protocol");
+            // Bound input and total float payload allocations before creating a device.
+            if(int64_t(streamWidth)*streamHeight>8294400 || int64_t(streamWidth)*streamHeight*multiplier>16777216)
+                throw std::runtime_error("errors.stream_protocol");
+            W=streamWidth;H=streamHeight;
             return runStream(options,backend,multiplier,blendWeight,radius);
         }
+        if(streamWidth!=256 || streamHeight!=144)throw std::runtime_error("errors.stream_protocol");
         if(multiplier!=2)throw std::runtime_error("errors.stream_protocol");
         bool external=!inputA.empty();
         std::filesystem::create_directories(out);

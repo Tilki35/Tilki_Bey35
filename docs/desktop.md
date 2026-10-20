@@ -27,10 +27,14 @@ X11 yolu 32-bit little-endian BGRX TrueColor ister. Hedef görünür olmalı;
 hata verir. GPU oyun yüzeyleri ve exclusive fullscreen doğrulanmadı. Siyah
 capture destek kanıtı değildir; korumalı içerik/anti-cheat atlatılmaz.
 
-Görüntü **256×144**'e oran koruma veya kırpma ile hazırlanır. Bu sınır,
-oyunun tam çözünürlüğünü koruyan üretim yolu değildir. Önizleme 512×288'e
-büyütülür; Ölçekleme kartı yalnız nearest/bilinear önizleme yöntemini seçer.
-Kapalıyken motorun 256×144 sınırı kalkmaz. Oyunun kendi sunumuna kare eklenmez.
+Görüntü kaynak pencerenin **kendi çözünürlüğünde** işlenir; yakalama ile motor
+arasında küçültme/büyütme yoktur. Önizleme sonradan pencereye sığdırılabilir.
+Ölçekleme kartı yalnız bu görüntüleme adımının nearest/bilinear yöntemini seçer.
+Pencere yeniden boyutlanırsa işçi yeni boyutla yeniden açılır; eski boyutun
+kaynak geçmişi atılır. Sınırlar: kenar başına 4096, en fazla 8.294.400 piksel,
+çarpan × piksel en fazla 16.777.216. Sınır aşılırsa hata gösterilir; çözünürlük
+sessizce düşürülmez. GPU storage buffer sınırı da kontrol edilir.
+Oyunun kendi sunumuna kare eklenmez.
 
 ## Modlar, kaynaklar ve zamanlama
 
@@ -112,3 +116,26 @@ Pencereleri yenile düğmesine basın. Kare oluşturma modunu ve çarpanı seçi
 yapar. Ayrı önizlemeyi büyütebilir veya F11 ile tam ekrana geçebilirsiniz;
 Esc tam ekrandan çıkar. Önizlemeyi kapatmak yakalamayı durdurur. Kaynak pencere
 pikselleri görünür olmalıdır; bu sürüm oyun motoruna bağlanmaz.
+
+## v0.2 modları ve süreler
+
+Basit menüde Tekrar Kare, Karışık Kare (Harmanlama), Hareket Telafili Ara Kare
+ve Otomatik Ara Kare + Tekrar ayrı seçimlerdir. Karışık Kare seçildiğinde ağırlık
+ayarı basit görünümde de açılır. Tekrar kare yeni hareket üretmez; harmanlama
+optik akış değildir ve gölgelenme yapabilir. AMD'nin özel algoritmalarının
+birebir kopyası olduğu iddia edilmez.
+
+Tekrar yolu doğrudan RGB baytlarını geçirir; CPU harmanlama yolu float RGBA
+kareleri veya GPU aktarımı oluşturmadan çalışır. Bu modlarda işlem yükü azalır,
+fakat yakalama, pipe aktarımı ve Tk sunumu maliyetleri sürer. Tekrar modunda
+Vulkan seçilse bile kopyalama CPU'da yapılır ve backend CPU olarak raporlanır.
+
+Performans sayfası kaynak boyutunu, yakalama+işlem+aktarımı ve iki kaynak kare
+arasındaki lookahead süresini ayrı gösterir. Bunlar input-to-photon ölçümü değildir.
+İnterpolasyon sonraki kaynak kareyi bekler; üretilen kareler veya tekrarlar tek
+başına giriş gecikmesini azaltmaz. Fiziksel GPU'da düşük milisaniye hedefi
+henüz doğrulanmadı; yazılım Vulkan/CPU Full HD interpolasyonu gerçek zamanlı
+oyun performansı sağlamaz.
+
+Harmanlanmış görüntüler `blended_count` / `blended_completed` olarak ayrı
+sayılır; `generated_count` hareket telafili yeni ara karelere ayrılmıştır.

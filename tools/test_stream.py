@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='eka-stream-') as tmp:
                         assert len(images)==1 and images[0].getpixel((0,0))==(100,100,100)
                         assert data['repeated_count']==multiplier-1 and data['generated_count']==0 and len(data['kinds'])==multiplier
                     elif mode=='blend':
-                        assert len(images)==multiplier and data['generated_count']==multiplier-1
+                        assert len(images)==multiplier and data['generated_count']==0 and data['blended_count']==multiplier-1
                         assert images[1].getpixel((0,0))==(85,85,85)
                     else:
                         assert len(images)==multiplier and data['generated_count']==multiplier-1

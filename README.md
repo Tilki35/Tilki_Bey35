@@ -10,6 +10,13 @@ vardır; macOS ikilisi üretilmedi ve macOS çalıştırma testi yapılmadı.
 X11 pencere pikselleri yakalanır; Windows GDI adaptörü kodda vardır ancak Windows üzerinde test edilmedi. Windows Graphics Capture, oyunlara bağlanan Vulkan layer, DirectX/OpenGL/Metal entegrasyonu ve oyunun kendi sunumuna ek kare yerleştirme henüz uygulanmadı. AFMF 2.1 performansına veya
 100 gerçek → 200 görüntülenen FPS hedefine ulaşıldığı iddia edilmez.
 
+## v0.2: çözünürlüğü koruyan kare işleme
+
+Yakalanan kaynak kareler küçültülmez. Tekrar Kare, Karışık Kare ve hareket
+telafili ara kare ayrı modlardır; harmanlama gerçek ara kare sayacına eklenmez.
+Full HD CPU/yazılım Vulkan doğruluk testleri geçti; 60→120 fiziksel FPS ve
+AFMF 2.1 performansı henüz sağlanmadı. [Geliştirme öncelikleri](docs/development-priorities.md).
+
 ## Hazır paketleri indir
 
 - [Linux masaüstü paketi](downloads/UniFrame-Desktop-linux-x64.tar.gz): arşivi açıp `UniFrame-Desktop/UniFrame-Desktop` dosyasını çalıştır.
@@ -98,8 +105,9 @@ alt piksel hareketini ayrıca sınar. Kendi kare çiftin için:
 ./uniframe --input-a A.ppm --input-b B.ppm --mode interpolate --output results
 ```
 
-Girişler şimdilik **256×144 P6 PPM, maxval 255** olmalıdır. Bu, yüksek
-çözünürlüklü canlı oyun işleme değildir. Çıktılar PPM, analiz modlarında akış
+Çevrimdışı PPM test girdileri **256×144 P6 PPM, maxval 255** olmalıdır.
+Masaüstü `--stream --width W --height H` yolu kaynak çözünürlüğünü korur;
+çevrimdışı test dosyası sınırıyla karıştırılmamalıdır. Çıktılar PPM, analiz modlarında akış
 CSV'si ve `metrics.json`'dır. Harici girdide gerçek ara görüntü bilinmediğinden
 MAE alanları `null` kalır; yalnız sonlu piksel ve seçilen modun işlemi doğrulanır.
 
@@ -178,7 +186,8 @@ NumPy gerektirmediği için dağıtıma eklemez.
 
 Arayüz: profil seçimi, basit/gelişmiş görünüm, Başlat/Durdur, koyu/açık tema,
 vurgu rengi, 2x/3x/4x, kalite/güç önayarları ve ölçüm dışa aktarma. İşlenen
-**256×144** görüntüler ayrı önizlemededir; oyunun çözünürlüğü/FPS'si değiştirilmez.
+**kaynak çözünürlüğündeki** görüntüler ayrı önizlemededir; yakalama küçültülmez.
+1920×1080 kaynak, motorda 1920×1080 işlenir; oyun sunumuna kare eklenmez.
 Gerçek oyun FPS'si yerine yakalama hızı gösterilir; fiziksel scanout ve giriş
 gecikmesi bilinmediğinde boş bırakılır. GPU kullanım/VRAM/watt ölçümü yoktur.
 

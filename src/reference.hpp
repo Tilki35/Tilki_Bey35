@@ -11,7 +11,7 @@
 double runCPU(const std::vector<Pixel>& a,const std::vector<Pixel>& b,
               std::vector<Pixel>& output,std::vector<Pixel>& flows,int flags=ARTIFACT_REDUCTION,float alpha=.5f,int radius=12,bool reuseFlow=false) {
     const auto start=std::chrono::steady_clock::now();
-    constexpr int gw=(W+7)/8,gh=(H+7)/8;
+    const int gw=(W+7)/8,gh=(H+7)/8;
     if(reuseFlow && flows.size()!=size_t((flags&DENSE_FLOW)?W*H:gw*gh))throw std::runtime_error("errors.stream_protocol");
     if(!reuseFlow)flows.resize(gw*gh);
     output.resize(W*H);
@@ -27,6 +27,16 @@ double runCPU(const std::vector<Pixel>& a,const std::vector<Pixel>& b,
         return (next?b:a)[std::clamp(y,0,H-1)*W+std::clamp(x,0,W-1)];
     };
     auto lum=[](Pixel p) { return p.r*.2126f+p.g*.7152f+p.b*.0722f; };
+    // Matching reuses luma instead of recomputing RGB dot products for every
+    // candidate displacement. Source RGB pixels remain untouched.
+    std::vector<float> lumaA,lumaB;
+    if(!reuseFlow) {
+        lumaA.resize(a.size());lumaB.resize(b.size());
+        for(size_t i=0;i<a.size();i++){lumaA[i]=lum(a[i]);lumaB[i]=lum(b[i]);}
+    }
+    auto matchLuma=[&](int x,int y,bool next) {
+        return (next?lumaB:lumaA)[std::clamp(y,0,H-1)*W+std::clamp(x,0,W-1)];
+    };
     for(int by=0;!reuseFlow && by<gh;by++) for(int bx=0;bx<gw;bx++) {
         std::array<float,4> f{};
         for(int direction=0;direction<2;direction++) {
@@ -34,8 +44,8 @@ double runCPU(const std::vector<Pixel>& a,const std::vector<Pixel>& b,
             for(int dy=-radius;dy<=radius;dy++) for(int dx=-radius;dx<=radius;dx++) {
                 float error=0;
                 for(int y=0;y<8;y+=2) for(int x=0;x<8;x+=2) {
-                    float diff=lum(texel(bx*8+x,by*8+y,direction!=0))-
-                               lum(texel(bx*8+x+dx,by*8+y+dy,direction==0));
+                    float diff=matchLuma(bx*8+x,by*8+y,direction!=0)-
+                               matchLuma(bx*8+x+dx,by*8+y+dy,direction==0);
                     error+=diff*diff;
                 }
                 float previous=f[direction*2]*f[direction*2]+f[direction*2+1]*f[direction*2+1];

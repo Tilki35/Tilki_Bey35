@@ -68,7 +68,9 @@ seyrek 16 parlaklık örneğiyle ileri/geri block matching. Bu temel görüntü 
 hareket tahminidir. İsteğe bağlı yoğun Lucas–Kanade, bu vektörleri başlangıç
 alıp piksel başına 5×5 pencerede üç iterasyonla ileri/geri alt piksel hareketi
 iyileştirir. Tek ölçekli araştırma prototipidir; üretim kalitesinde akış değildir.
-256×144 ve küçük hareket içindir. Büyük hareketlerde, tekrar eden desenlerde ve
+Çevrimdışı testler 256×144, küçük hareket içindir. v0.2 sürekli akış yolu
+kaynak çözünürlüğünü korur; Full HD doğruluk testi gerçek zamanlı performans
+anlamına gelmez. Büyük hareketlerde, tekrar eden desenlerde ve
 obje sınırlarında güvenilmezdir. Arama maliyeti yarıçapın karesiyle artar.
 
 Sonraki adım: çok ölçekli luminance piramidi, coarse-to-fine arama, daha güçlü

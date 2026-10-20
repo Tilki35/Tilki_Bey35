@@ -1,2 +1,2 @@
-86e3eab3657810c80148cf69b3ae31750629667c8c7d3ef7a2423ddd4cc61a71  UniFrame-Desktop-linux-x64.tar.gz
-9679785173073ddeb698cbddc9482b217bbe28bcd64d43b3069a722525bb65aa  UniFrame-prototype-windows-x64.zip
+1f652278e214f22a27d43515127b6168e28422298c3148a1191e70b1caf80023  UniFrame-Desktop-linux-x64.tar.gz
+c6dcf36087f40f57a79d633e4ae9b056f8eee01934ede6b90a937c0a60fdf70b  UniFrame-prototype-windows-x64.zip

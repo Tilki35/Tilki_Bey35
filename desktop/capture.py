@@ -12,9 +12,12 @@ class Window:
     id:int
     title:str
 
-def prepare(image,aspect='fit'):
-    if aspect=='fill':return ImageOps.fit(image,(256,144),Image.Resampling.BILINEAR)
-    return ImageOps.pad(image,(256,144),Image.Resampling.BILINEAR,color='black')
+def prepare(image,aspect='fit',size=None):
+    # Native capture is never resized for frame generation. An explicit size is
+    # reserved for offline fixtures; preview scaling happens after processing.
+    if size is None:return image.convert('RGB') if image.mode!='RGB' else image
+    if aspect=='fill':return ImageOps.fit(image,size,Image.Resampling.BILINEAR)
+    return ImageOps.pad(image,size,Image.Resampling.BILINEAR,color='black')
 
 class XImage(C.Structure):
     _fields_=[('width',C.c_int),('height',C.c_int),('xoffset',C.c_int),('format',C.c_int),('data',C.c_void_p),
