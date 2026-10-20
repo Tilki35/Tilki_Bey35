@@ -1,0 +1,56 @@
+#version 450
+layout(local_size_x=8,local_size_y=8) in;
+layout(std430,binding=0) readonly buffer A { vec4 a[]; };
+layout(std430,binding=1) readonly buffer B { vec4 b[]; };
+layout(std430,binding=2) readonly buffer F { vec4 flow[]; };
+layout(std430,binding=3) writeonly buffer O { vec4 outputPixels[]; };
+layout(std430,binding=4) readonly buffer Dense { vec4 dense[]; };
+layout(push_constant) uniform Params { int width; int height; int radius; int mode; float alpha; } p;
+vec4 texel(ivec2 q,bool next) {
+    q=clamp(q,ivec2(0),ivec2(p.width-1,p.height-1));
+    return next ? b[q.y*p.width+q.x] : a[q.y*p.width+q.x];
+}
+vec4 sampleFrame(vec2 q,bool next) {
+    ivec2 lo=ivec2(floor(q)); vec2 t=fract(q);
+    return mix(mix(texel(lo,next),texel(lo+ivec2(1,0),next),t.x),
+               mix(texel(lo+ivec2(0,1),next),texel(lo+ivec2(1,1),next),t.x),t.y);
+}
+vec4 field(vec2 q) {
+    if((p.mode&512)!=0) {
+        ivec2 pixel=clamp(ivec2(floor(q)),ivec2(0),ivec2(p.width-1,p.height-1));
+        return dense[pixel.y*p.width+pixel.x];
+    }
+    ivec2 grid=(ivec2(p.width,p.height)+7)/8;
+    ivec2 block=clamp(ivec2(floor(q/8)),ivec2(0),grid-1);
+    return flow[block.y*grid.x+block.x];
+}
+void main() {
+    ivec2 q=ivec2(gl_GlobalInvocationID.xy);
+    if(q.x>=p.width || q.y>=p.height) return;
+    int index=q.y*p.width+q.x;
+    int synthesis=p.mode&15;
+    if(synthesis==1) { outputPixels[index]=a[index]; return; }
+    if(synthesis==2) { outputPixels[index]=mix(a[index],b[index],p.alpha); return; }
+    if(synthesis==3) { outputPixels[index]=b[index]; return; }
+    bool protect=(p.mode&256)!=0;
+    // Preserve exactly unchanged pixels, including stationary text and HUD edges.
+    if(protect && all(equal(a[index],b[index]))) { outputPixels[index]=b[index]; return; }
+    vec2 pos=vec2(q);
+    // Two fixed-point iterations approximate inverse mapping into each source.
+    vec2 fromA=pos,fromB=pos;
+    for(int i=0;i<2;i++) {
+        fromA=pos-p.alpha*field(fromA).xy;
+        fromB=pos-(1.0-p.alpha)*field(fromB).zw;
+    }
+    vec2 forward=field(fromA).xy, backward=field(fromB).zw;
+    vec4 ca=sampleFrame(fromA,false), cb=sampleFrame(fromB,true);
+    float disagreement=length(forward+backward);
+    bool outside=any(lessThan(fromA,vec2(0))) || any(greaterThan(fromA,vec2(p.width-1,p.height-1))) ||
+                 any(lessThan(fromB,vec2(0))) || any(greaterThan(fromB,vec2(p.width-1,p.height-1)));
+    // Conservative fallback, not a complete disocclusion solution.
+    // A conservative one-code-value limit avoids blending visibly different edges.
+    vec3 difference=abs(ca.rgb-cb.rgb);
+    float residual=max(difference.r,max(difference.g,difference.b));
+    outputPixels[index]=(protect && (outside || disagreement>2.0 || residual>1.0/255.0))
+        ? texel(q,true) : mix(ca,cb,p.alpha);
+}

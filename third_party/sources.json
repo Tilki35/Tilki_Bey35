@@ -1,0 +1,26 @@
+{
+  "third_party/nlohmann/json.hpp": {
+    "url": "https://raw.githubusercontent.com/nlohmann/json/55f93686c01528224f448c19128836e7df245f72/single_include/nlohmann/json.hpp",
+    "sha256": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63"
+  },
+  "third_party/nlohmann/LICENSE.MIT": {
+    "url": "https://raw.githubusercontent.com/nlohmann/json/55f93686c01528224f448c19128836e7df245f72/LICENSE.MIT",
+    "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+  },
+  "locales/cldr/LICENSE": {
+    "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/91c267402229a59e3ef2774544f001bf959e8809/LICENSE",
+    "sha256": "220ba0e1c43b99530d2d5bdb892a99dca0989414f51ab695ecd90163eaa1ec3b"
+  },
+  "locales/cldr/aliases.json": {
+    "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/91c267402229a59e3ef2774544f001bf959e8809/cldr-json/cldr-core/supplemental/aliases.json",
+    "sha256": "b7011c866f27502ed6f160ca83f2a83fa42bce9fdc2176e60e2c6630961d877c"
+  },
+  "locales/cldr/scriptMetadata.json": {
+    "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/91c267402229a59e3ef2774544f001bf959e8809/cldr-json/cldr-core/scriptMetadata.json",
+    "sha256": "9160c07c87f58495f57076c88231f63c1c062672991822671c9e99697b5e5cda"
+  },
+  "locales/cldr/likelySubtags.json": {
+    "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/91c267402229a59e3ef2774544f001bf959e8809/cldr-json/cldr-core/supplemental/likelySubtags.json",
+    "sha256": "38345946ad457213fb39e9645ab50f36b61681bf674b2eef2979a3b58d04afc8"
+  }
+}

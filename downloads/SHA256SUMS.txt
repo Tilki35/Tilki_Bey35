@@ -1,0 +1,2 @@
+3f297df1f3ecb723bc00232ed26ffcfe1e012791061524664ac54257caa6dc3a  UniFrame-Desktop-linux-x64.tar.gz
+83c6ee3c81d7a098eda4bfd46e45c2b6f0af7e749cbe3fb2ebb28126ec9ad40a  UniFrame-prototype-windows-x64.zip

@@ -1,0 +1,44 @@
+#version 450
+// Dense, local Lucas-Kanade optical flow seeded by bidirectional block matching.
+// No proprietary/vendor optical-flow hardware or algorithm is used.
+layout(local_size_x=8,local_size_y=8) in;
+layout(std430,binding=0) readonly buffer A { vec4 a[]; };
+layout(std430,binding=1) readonly buffer B { vec4 b[]; };
+layout(std430,binding=2) readonly buffer Coarse { vec4 coarse[]; };
+layout(std430,binding=4) writeonly buffer Dense { vec4 dense[]; };
+layout(push_constant) uniform Params { int width; int height; int radius; int flags; float alpha; } p;
+float value(ivec2 q,bool next) {
+    q=clamp(q,ivec2(0),ivec2(p.width-1,p.height-1));
+    vec4 c=next ? b[q.y*p.width+q.x] : a[q.y*p.width+q.x];
+    return dot(c.rgb,vec3(.2126,.7152,.0722));
+}
+float sampleLuma(vec2 q,bool next) {
+    ivec2 lo=ivec2(floor(q)); vec2 t=fract(q);
+    return mix(mix(value(lo,next),value(lo+ivec2(1,0),next),t.x),
+               mix(value(lo+ivec2(0,1),next),value(lo+ivec2(1,1),next),t.x),t.y);
+}
+vec2 refine(ivec2 pos,vec2 motion,bool reverse) {
+    for(int iteration=0;iteration<3;iteration++) {
+        float xx=0,xy=0,yy=0; vec2 rhs=vec2(0);
+        for(int y=-2;y<=2;y++) for(int x=-2;x<=2;x++) {
+            ivec2 origin=pos+ivec2(x,y); vec2 target=vec2(origin)+motion;
+            float residual=value(origin,reverse)-sampleLuma(target,!reverse);
+            vec2 gradient=.5*vec2(sampleLuma(target+vec2(1,0),!reverse)-sampleLuma(target-vec2(1,0),!reverse),
+                                    sampleLuma(target+vec2(0,1),!reverse)-sampleLuma(target-vec2(0,1),!reverse));
+            xx+=gradient.x*gradient.x; xy+=gradient.x*gradient.y; yy+=gradient.y*gradient.y;
+            rhs+=gradient*residual;
+        }
+        float determinant=xx*yy-xy*xy;
+        if(determinant<1e-6) break;
+        vec2 step=vec2(yy*rhs.x-xy*rhs.y,xx*rhs.y-xy*rhs.x)/determinant;
+        motion=clamp(motion+clamp(step,vec2(-1),vec2(1)),vec2(-p.radius),vec2(p.radius));
+    }
+    return motion;
+}
+void main() {
+    ivec2 pos=ivec2(gl_GlobalInvocationID.xy);
+    if(pos.x>=p.width || pos.y>=p.height) return;
+    int gridWidth=(p.width+7)/8;
+    vec4 seed=coarse[(pos.y/8)*gridWidth+pos.x/8];
+    dense[pos.y*p.width+pos.x]=vec4(refine(pos,seed.xy,false),refine(pos,seed.zw,true));
+}

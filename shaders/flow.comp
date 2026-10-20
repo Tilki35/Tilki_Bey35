@@ -1,0 +1,37 @@
+#version 450
+// Bidirectional block matching. One invocation per 8x8 block.
+layout(local_size_x=8, local_size_y=8) in;
+layout(std430,binding=0) readonly buffer A { vec4 a[]; };
+layout(std430,binding=1) readonly buffer B { vec4 b[]; };
+layout(std430,binding=2) buffer F { vec4 flow[]; };
+layout(std430,binding=3) buffer O { vec4 outputPixels[]; };
+layout(push_constant) uniform Params { int width; int height; int radius; int mode; float alpha; } p;
+float luminance(vec4 c) { return dot(c.rgb, vec3(.2126,.7152,.0722)); }
+float pixel(ivec2 q, bool reverse) {
+    q=clamp(q,ivec2(0),ivec2(p.width-1,p.height-1));
+    int i=q.y*p.width+q.x;
+    return luminance(reverse ? b[i] : a[i]);
+}
+vec2 estimate(ivec2 origin, bool reverse) {
+    float best=1e30; ivec2 displacement=ivec2(0);
+    for(int dy=-p.radius;dy<=p.radius;dy++)
+    for(int dx=-p.radius;dx<=p.radius;dx++) {
+        float error=0;
+        for(int y=0;y<8;y+=2) for(int x=0;x<8;x+=2) {
+            ivec2 q=origin+ivec2(x,y);
+            float d=pixel(q,reverse)-pixel(q+ivec2(dx,dy),!reverse);
+            error+=d*d;
+        }
+        // Prefer zero motion when several candidates are equally plausible.
+        int distance=dx*dx+dy*dy;
+        int previous=displacement.x*displacement.x+displacement.y*displacement.y;
+        if(error<best || (error==best && distance<previous)) { best=error; displacement=ivec2(dx,dy); }
+    }
+    return vec2(displacement);
+}
+void main() {
+    ivec2 block=ivec2(gl_GlobalInvocationID.xy);
+    ivec2 grid=(ivec2(p.width,p.height)+7)/8;
+    if(any(greaterThanEqual(block,grid))) return;
+    flow[block.y*grid.x+block.x]=vec4(estimate(block*8,false),estimate(block*8,true));
+}
